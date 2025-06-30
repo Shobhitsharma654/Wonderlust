@@ -1,0 +1,22 @@
+
+  // logger - midddleware - always write in before get and post request , otherwise no middleware execute
+// app.use((req,res, next) =>{
+//   req.time = Date.now();
+//   console.log(req.method , req.hostname , req.time)
+//   next();
+// })
+
+
+// app.use("/api" , (req,res,next)=>{
+//   let {token} = req.query;
+//   if( token === "give"){
+//     next();
+//   }
+//   console.log("access denied");
+
+// });
+
+// when we call findByIdAndDelete then it go to another function findOneAndDelete using a (pre middleware - run before the query is executed)
+// (post middleware - run after the query is executed)
+
+// if we want to delete customer all orders than using a deleteMany function and (id_ : {$in : customer.order})

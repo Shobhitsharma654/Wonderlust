@@ -4,15 +4,17 @@ if (process.env.NODE_ENV != "production") {
   
 console.log(process.env.SECRET);
 
+const dbUrl = process.env.MONGODB_URI;
+
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
 const session = require("express-session");
+const MongoStore = require("connect-mongo")
 const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
 const ExpressError = require("./utils/ExpressError.js");
-const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
 const flash = require("connect-flash")
 const passport = require("passport");
 const User = require("./models/user.js");
@@ -21,6 +23,7 @@ const LocalStrategy = require("passport-local");
 const listingRouter = require("./routes/listing.js");
 const reviewRouter = require("./routes/review.js");
 const userRouter = require("./routes/user.js");
+
 main()
 .then(() => {
   console.log("connected to DB");
@@ -30,7 +33,7 @@ main()
 });
 
 async function main() {
-  await mongoose.connect(MONGO_URL);
+  await mongoose.connect(dbUrl);
 }
 
 app.set("view engine", "ejs");
@@ -40,18 +43,32 @@ app.use(methodOverride("_method"));
 app.engine("ejs" , ejsMate);
 app.use(express.static(path.join(__dirname, "/public")));
 
-const sessionOptions = {
-  secret: "mysecret",
-  resave: false,
-  saveUninitialized: true,
-  cookie: {
-    expires: Date.now() + 1000 * 60 * 60 * 24, // 1 day
-    maxAge: 1000 * 60 * 60 * 24,
-    httpOnly: true, // Helps prevent XSS attacks
-  },
-};
+  const store = MongoStore.create({
+    mongoUrl: dbUrl,
+    crypto:{
+      secret: "mysupersecretcode",
+    },
+    touchAfter: 24*3600,
+  })
 
-app.use(session(sessionOptions));
+    
+  store.on("error", ()=>{
+    console.log("ERROR in MONGO SESSION STORE", err);
+  })
+
+  const sessionOption = {
+    store,
+    secret: "mysupersecretcode",
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+      expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      httpOnly: true,
+    },
+  };
+
+app.use(session(sessionOption));
 app.use(flash());
 
 app.use(passport.initialize());
@@ -74,15 +91,6 @@ app.get("/", (req, res) => {
 });
 
 
-// app.get("/login", async (req, res) => {
-//   let fakeUser = new User({
-//     email:"shobhit@gmail.com",
-//     username:"mohan",
-//   })
-// let registerUser = await User.register(fakeUser ,"abcdew")
-// res.send(registerUser);
-
-// })
 
 app.use("/listings", listingRouter);
 app.use("/listings/:id/reviews", reviewRouter);
@@ -91,11 +99,6 @@ app.use("/", userRouter);
   app.use((err, req, res, next) => {
      res.render("error.ejs", { err });
   });
-
-  //   app.all("*", (req, res, next) => {
-  //   next(new ExpressError(404, "Page Not Found"));
-  // });
-
 
   app.listen(8080, () => {
     console.log("server is listening to port 8080");

@@ -13,7 +13,7 @@ if (process.env.NODE_ENV != "production") {
   const MongoStore = require("connect-mongo");
   const flash = require("connect-flash");
   const passport = require("passport");
-  const localStrategy = require("passport-local");
+  const LocalStrategy = require("passport-local");
   
   // route require
   const listingRouter = require("./routes/listing.js");
@@ -80,7 +80,7 @@ if (process.env.NODE_ENV != "production") {
   
   app.use(passport.initialize());
   app.use(passport.session());
-  passport.use(new localStrategy(User.authenticate()));
+  passport.use(new LocalStrategy(User.authenticate()));
   passport.serializeUser(User.serializeUser());
   passport.deserializeUser(User.deserializeUser());
   
